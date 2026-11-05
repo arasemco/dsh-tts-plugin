@@ -13,11 +13,15 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
-    "README.md"
+    "README.md",
+    "cordis.patch.yml"
   ],
   "dsh": {
     "client": {
       "platform": "web"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
     }
   },
   "license": "MIT"

@@ -1,0 +1,8 @@
+# The layer this bundle contributes to a profile. Installing the package with
+# `dsh plugin --profile <name> add dsh-plugin-tts` composes this row, so the
+# plugin is active without hand-editing the profile's own patch file. Machine
+# specific values (such as a voice catalog path) belong in that profile patch,
+# as an id-targeted override of this row.
+- insert:
+    - id: tts
+      name: dsh-plugin-tts
