@@ -1,32 +1,36 @@
 name: Release
 
-# Push a tag like v0.1.0: the self-contained suites run, the npm tarball is
-# built and attached to the GitHub Release, and the release notes are generated
-# from the commits since the previous tag.
+# One responsibility: publish the GitHub release for the tag on main. Triggered
+# by the Version run completing, because a tag pushed with GITHUB_TOKEN emits no
+# push event of its own.
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows:
+      - Version
+    types:
+      - completed
 
 permissions:
   contents: write
 
 jobs:
   release:
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # The package has no runtime dependencies; the suites need this harness.
-      - name: Install test harness
-        run: npm install --no-save --no-package-lock react@18 react-dom@18 jsdom
-      # host.test.mjs probes a live audio.cpp on the author's LAN, so it stays out.
-      - name: Test
-        run: node --test test/client.test.mjs test/discovery.test.mjs
-        env:
-          NODE_ENV: development
+      - name: Read the tag on main
+        id: tag
+        run: |
+          tag="$(git describe --tags --exact-match)"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "release ${tag}"
       - name: Build tarball
         run: npm pack
       - name: Record tarball SHA-256
@@ -39,6 +43,6 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.tag.outputs.tag }}
           generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
           files: '*.tgz'

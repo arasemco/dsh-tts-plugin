@@ -1,0 +1,30 @@
+name: Test
+
+# One responsibility: run the suites. Reusable, so the release path calls the
+# same file instead of repeating the commands.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The package has no runtime dependencies; the suites need this harness.
+      - name: Install test harness
+        run: npm install --no-save --no-package-lock react@18 react-dom@18 jsdom
+      # host.test.mjs probes a live audio.cpp on the author's LAN, so it stays out.
+      - name: Test
+        env:
+          NODE_ENV: development
+        run: node --test test/client.test.mjs test/discovery.test.mjs

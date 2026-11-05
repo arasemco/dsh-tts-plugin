@@ -1,0 +1,49 @@
+name: Version
+
+# One responsibility: decide the next semver from the commits since the last
+# tag, then commit that bump and tag it. It publishes nothing.
+#
+# The bump push uses GITHUB_TOKEN, which starts no other workflow, so the tag is
+# consumed through workflow_run in release.yml rather than through a tag event.
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: version-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  version:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Next version
+        id: next
+        run: ./scripts/next-version.sh >> "$GITHUB_OUTPUT"
+      # [skip ci] keeps the bump push from starting anything, belt and braces.
+      - name: Commit and tag
+        if: steps.next.outputs.bump != 'none'
+        env:
+          TAG: v${{ steps.next.outputs.version }}
+        run: |
+          npm version "${{ steps.next.outputs.version }}" --no-git-tag-version
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore(release): ${TAG} [skip ci]"
+          git tag -a "${TAG}" -m "${TAG}"
+          git push origin HEAD:main
+          git push origin "${TAG}"
