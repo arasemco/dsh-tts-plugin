@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-tts",
   "description": "Listen to replies: text-to-speech for the Web GUI, synthesized by the local audio.cpp (Kokoro) server",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
